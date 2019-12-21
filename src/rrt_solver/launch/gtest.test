@@ -1,0 +1,5 @@
+<launch>
+	<rosparam file="$(find rrt_solver)/config.yaml" command="load"/>
+  	<param name="robot_description" command="$(find xacro)/xacro --inorder '$(find elfin_description)/urdf/elfin3.urdf.xacro'" />
+	<test test-name="Unit-Tests" pkg="rrt_solver" type="rrt_solver-test" name="JustAName"/>
+</launch>

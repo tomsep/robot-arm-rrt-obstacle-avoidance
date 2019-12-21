@@ -1,0 +1,9 @@
+robot:
+      root_link: elfin_base_link
+      tip_link: elfin_end_link
+
+      control_point_names:
+        - elfin_end_link
+      control_point_radiuses:
+        - 0.02
+

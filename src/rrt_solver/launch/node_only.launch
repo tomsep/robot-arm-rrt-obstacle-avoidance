@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="rrt_solver" type="rrt_node" name="rrt" output="screen"/>
+</launch>
