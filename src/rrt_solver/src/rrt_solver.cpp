@@ -249,6 +249,10 @@ bool collision_check(
         for (auto& obstacle : obstacles)
         {
             result = part->collides(*obstacle);
+            if (result == true)
+            {
+                return true;
+            }
         }
     }
     return result;
