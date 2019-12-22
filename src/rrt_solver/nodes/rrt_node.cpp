@@ -1,13 +1,16 @@
 #include <ros/ros.h>
 #include <std_msgs/Float64MultiArray.h>
 #include <trajectory_msgs/JointTrajectory.h>
+#include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
+#include <sensor_msgs/JointState.h>
 #include "rrt_solver/rrt_solver.h"
 #include <Eigen/Core>
 #include <vector>
 #include <queue>
 #include <tuple>
 #include<string>
-
+ros::Publisher marker_pub;
 
 typedef std::queue<std::tuple<Eigen::Matrix<double, 6, 1>, Eigen::Matrix<double, 6, 1>>> cmdqueue_t;
 cmdqueue_t cmd_queue;
@@ -55,6 +58,165 @@ trajectory_msgs::JointTrajectory joint_trajectory(
     return traj;    
 }
 
+std::vector<RRT::ICollidable*> build_obstacles(ros::NodeHandle n)
+{
+    using std::vector;
+    vector<double> x, y, z, r;
+    vector<RRT::ICollidable*> obstacles;
+
+    if (!n.getParam("obstacles/x", x))
+    {
+        ROS_ERROR("Could not find obstacle x param");
+    }
+    if (!n.getParam("obstacles/y", y))
+    {
+        ROS_ERROR("Could not find obstacle y param");
+    }
+    if (!n.getParam("obstacles/z", z))
+    {
+        ROS_ERROR("Could not find obstacle z param");
+    }
+    if (!n.getParam("obstacles/r", r))
+    {
+        ROS_ERROR("Could not find obstacle r param");
+    }
+    size_t size = x.size();
+    if (y.size() != size || z.size() != size || r.size() != size)
+    {
+        ROS_ERROR("Obstacle's parameter dimensions mismatch");
+    }
+
+    KDL::Frame init_frame;
+
+    for (size_t i = 0; i < x.size(); i++)
+    {
+        init_frame.p = KDL::Vector(x.at(i), y.at(i), z.at(i));
+        obstacles.push_back(new RRT::Sphere(init_frame, r.at(i)));
+
+    }
+    return obstacles;
+}
+
+
+void publish_obstacle_markers(
+    std::vector<RRT::ICollidable*> obstacles, 
+    std::string frame_id, std::string n_space, int id)
+{
+    //auto n = ros::NodeHandle();
+    //ros::Publisher marker_pub;
+    
+    visualization_msgs::Marker markers;
+    markers.header.frame_id = frame_id;
+    markers.header.stamp = ros::Time::now();
+    markers.action = visualization_msgs::Marker::ADD;
+    markers.ns = n_space;
+    markers.id = id;
+
+    markers.pose.orientation.w = 1.0;
+    markers.type = visualization_msgs::Marker::SPHERE;
+
+    markers.color.r = 0.0f;
+    markers.color.g = 1.0f;
+    markers.color.b = 0.0f;
+    markers.color.a = 1.0;
+
+    for (auto o : obstacles)
+    {
+        auto sphere = (RRT::Sphere*)o;
+        double r = sphere->r;
+        auto frame = sphere->frame;
+        // sphere of radius r
+        markers.scale.x = r * 2;
+        markers.scale.y = r * 2;
+        markers.scale.z = r * 2;
+        markers.pose.position.x = frame.p(0);
+        markers.pose.position.y = frame.p(1);
+        markers.pose.position.z = frame.p(2);
+
+    }
+    marker_pub.publish(markers);
+    ros::spinOnce();
+}
+
+
+class HullVisualizer
+{
+public:
+    HullVisualizer(
+        std::shared_ptr<RRT::RobotHull> rob,
+        std::string frame_id)
+    {
+        rob_ = rob;
+        n_ = ros::NodeHandle();
+        pub_ = n_.advertise<visualization_msgs::MarkerArray>("robothull_markers", 1);
+        sub_ = n_.subscribe<sensor_msgs::JointState>("joint_states", 10, &HullVisualizer::joint_callback, this);
+
+        part_count_ = rob->parts.size();
+        marr_.markers.reserve(part_count_);
+        q_.resize(6);
+
+        for (size_t i = 0; i < rob_->joint_arrs.size(); i++)
+        {
+            q_tmps_.push_back(*(rob_->joint_arrs.at(i)));
+        }
+
+        // Set default marker params
+        marker_.header.frame_id = frame_id;
+        marker_.action = visualization_msgs::Marker::ADD;
+        marker_.type = visualization_msgs::Marker::SPHERE;
+        marker_.pose.orientation.w = 1.0;
+
+        marker_.color.r = 0.0f;
+        marker_.color.g = 1.0f;
+        marker_.color.b = 0.0f;
+        marker_.color.a = 0.33;
+
+    }
+    void update()
+    {
+        for (size_t i = 0; i < part_count_; i++)
+        {
+            marker_.header.stamp = ros::Time::now();
+            marker_.id = i;
+            q_tmps_.at(i).data = q_.data.head(q_tmps_.at(i).rows());
+            rob_->fk_solvers.at(i).JntToCart(q_tmps_.at(i), frame_tmp_);
+            double r = ((RRT::Sphere*)rob_->parts.at(i))->r;
+            marker_.scale.x = r * 2;
+            marker_.scale.y = r * 2;
+            marker_.scale.z = r * 2;
+            marker_.pose.position.x = frame_tmp_.p(0);
+            marker_.pose.position.y = frame_tmp_.p(1);
+            marker_.pose.position.z = frame_tmp_.p(2);
+            marr_.markers.push_back(marker_);
+        }
+        pub_.publish(marr_);
+        marr_.markers.clear();
+    }
+
+    void joint_callback(const sensor_msgs::JointStateConstPtr &msg)
+    {
+        auto posvec = msg->position;
+        for (size_t i = 0; i < posvec.size(); i++)
+        {
+            q_(i) = posvec.at(i);
+        }
+    }
+
+private:
+    ros::NodeHandle n_;
+    ros::Publisher pub_;
+    ros::Subscriber sub_;
+    visualization_msgs::MarkerArray marr_;
+    std::shared_ptr<RRT::RobotHull> rob_;
+    visualization_msgs::Marker marker_;
+    size_t part_count_;
+    std::vector<KDL::JntArray> q_tmps_;
+    KDL::Frame frame_tmp_;
+    KDL::JntArray q_;
+};
+
+
+
 
 int main(int argc, char **argv){
     ros::init(argc, argv, "rrt");
@@ -62,16 +224,40 @@ int main(int argc, char **argv){
         ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug);
     ros::console::notifyLoggerLevelsChanged();
     auto n = ros::NodeHandle();
+    marker_pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 100, true);
+
+    
+    // Load solver params
+    double spacing, maxnorm;
+    int try_merge_interval, maxiter;
+
+    if (!n.getParam("solver/spacing", spacing))
+    {
+        ROS_ERROR("Could not find spacing param");
+    }
+
+    if (!n.getParam("solver/maxnorm", maxnorm))
+    {
+        ROS_ERROR("Could not find maxnorm param");
+    }
+
+    if (!n.getParam("solver/merge_attempt_interval", try_merge_interval))
+    {
+        ROS_ERROR("Could not find merge_attempt_interval param");
+    }
+
+    if (!n.getParam("solver/maxiter", maxiter))
+    {
+        ROS_ERROR("Could not find maxiter param");
+    }
+    
     auto rob = RRT::build_robot(n);
-
-    // Build obstacles
-    double sphere_r = 0.05;
-    KDL::Frame init_frame;
-    init_frame.p = KDL::Vector(0.22, 0, 0.6);
-    std::vector<RRT::ICollidable*> obstacles;
-    obstacles.push_back(new RRT::Sphere(init_frame, sphere_r));
-
-    ros::Rate loop_rate(20);
+    auto hull_viz = HullVisualizer(rob, "world");
+    auto obstacles = build_obstacles(n);
+    std::string frame_id = "world";
+    publish_obstacle_markers(obstacles, frame_id, "1", 1);
+    
+    ros::Rate loop_rate(30);
     unsigned int seq = 0;
     ros::Publisher path_pub = n.advertise<trajectory_msgs::JointTrajectory>("path", 1);
     ros::Subscriber sub = n.subscribe<std_msgs::Float64MultiArray>("rrt_solver", 1, &solve_cmd);
@@ -90,35 +276,22 @@ int main(int argc, char **argv){
             auto goal = std::get<1>(cmd);
 
             ROS_INFO_STREAM(
-                "Received\n\tstart:\n\t" << start.transpose() 
+                "Received command\n\tstart:\n\t" << start.transpose() 
                 << "\n\tgoal:\n\t" << goal.transpose());
 
-            const double spacing = 0.002;
-            const double maxnorm = 0.1;
-            const unsigned int try_merge_interval = 1000;
-            const unsigned int maxiter = 100000;
             auto path = RRT::solver(
                 rob, obstacles, start, goal, spacing, 
                 maxnorm, try_merge_interval, maxiter);
-            ROS_DEBUG("Solved path of %lu points", path.size());
-            ROS_INFO_STREAM(
-                "Full path:\n\tstart:\n\t" << path.front().transpose()
-                << "\n\tgoal:\n\t" << path.back().transpose());
-            
-            path = path_reduction(path, rob, obstacles, spacing);
-            ROS_DEBUG("Path redued size of %lu points", path.size());
 
-            ROS_INFO_STREAM(
-                "Reduced\n\tstart:\n\t" << path.front().transpose()
-                << "\n\tgoal:\n\t" << path.back().transpose());
+            path = path_reduction(path, rob, obstacles, spacing);
+            ROS_INFO("Solved path with %lu via points", path.size());
             
             auto traj = joint_trajectory(path, seq);
             seq++;
             path_pub.publish(traj);
-            ROS_DEBUG("Solved path of %lu points", traj.points.size());
-            ROS_INFO("path published");
+            ROS_INFO("Solved path with %lu via points", traj.points.size());
         }
-
+        hull_viz.update();
         loop_rate.sleep();
     }
     return 0;

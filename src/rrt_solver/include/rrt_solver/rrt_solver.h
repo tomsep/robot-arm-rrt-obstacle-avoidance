@@ -60,13 +60,14 @@ public:
     RobotHull&  operator=(const  RobotHull&)  = delete;
     std::vector<ICollidable*> collidables(Eigen::Matrix<double, 6, 1> q);
     void add_part(KDL::ChainFkSolverPos_recursive fk_solver, ICollidable* obj, unsigned int nm_joints);
-
+    
+    std::vector<ICollidable*> parts;
+    std::vector<KDL::ChainFkSolverPos_recursive> fk_solvers;
+    std::vector<std::unique_ptr<KDL::JntArray>> joint_arrs;
 private:
     KDL::JntArray q_tmp;
     KDL::Frame frame_tmp;
-    std::vector<std::unique_ptr<KDL::JntArray>> joint_arrs;
-    std::vector<ICollidable*> parts;
-    std::vector<KDL::ChainFkSolverPos_recursive> fk_solvers;
+    
 };
 
 
