@@ -98,45 +98,64 @@ std::vector<RRT::ICollidable*> build_obstacles(ros::NodeHandle n)
 }
 
 
-void publish_obstacle_markers(
-    std::vector<RRT::ICollidable*> obstacles, 
-    std::string frame_id, std::string n_space, int id)
+class ObstacleVisualizer
 {
-    //auto n = ros::NodeHandle();
-    //ros::Publisher marker_pub;
-    
-    visualization_msgs::Marker markers;
-    markers.header.frame_id = frame_id;
-    markers.header.stamp = ros::Time::now();
-    markers.action = visualization_msgs::Marker::ADD;
-    markers.ns = n_space;
-    markers.id = id;
-
-    markers.pose.orientation.w = 1.0;
-    markers.type = visualization_msgs::Marker::SPHERE;
-
-    markers.color.r = 0.0f;
-    markers.color.g = 1.0f;
-    markers.color.b = 0.0f;
-    markers.color.a = 1.0;
-
-    for (auto o : obstacles)
+public:
+    ObstacleVisualizer(
+        std::vector<RRT::ICollidable*> obstacles,
+        std::string frame_id)
     {
-        auto sphere = (RRT::Sphere*)o;
-        double r = sphere->r;
-        auto frame = sphere->frame;
-        // sphere of radius r
-        markers.scale.x = r * 2;
-        markers.scale.y = r * 2;
-        markers.scale.z = r * 2;
-        markers.pose.position.x = frame.p(0);
-        markers.pose.position.y = frame.p(1);
-        markers.pose.position.z = frame.p(2);
+        obstacles_ = obstacles;
+        n_ = ros::NodeHandle();
+        pub_ = n_.advertise<visualization_msgs::MarkerArray>("obstacle_markers", 1, true);
+
+        part_count_ = obstacles.size();
+        marr_.markers.reserve(part_count_);
+
+        // Set default marker params
+        marker_.header.frame_id = frame_id;
+        marker_.action = visualization_msgs::Marker::ADD;
+        marker_.type = visualization_msgs::Marker::SPHERE;
+        marker_.pose.orientation.w = 1.0;
+
+        marker_.color.r = 0.2f;
+        marker_.color.g = 1.0f;
+        marker_.color.b = 0.2f;
+        marker_.color.a = 1.0;
 
     }
-    marker_pub.publish(markers);
-    ros::spinOnce();
-}
+    void update()
+    {
+        for (size_t i = 0; i < part_count_; i++)
+        {
+            marker_.header.stamp = ros::Time::now();
+            marker_.id = i;
+
+            auto sphere = (RRT::Sphere*)obstacles_.at(i);
+            double r = sphere->r;
+            auto frame = sphere->frame;
+
+            marker_.scale.x = r * 2;
+            marker_.scale.y = r * 2;
+            marker_.scale.z = r * 2;
+            marker_.pose.position.x = frame.p(0);
+            marker_.pose.position.y = frame.p(1);
+            marker_.pose.position.z = frame.p(2);
+
+            marr_.markers.push_back(marker_);
+        }
+        pub_.publish(marr_);
+        marr_.markers.clear();
+    }
+
+private:
+    ros::NodeHandle n_;
+    ros::Publisher pub_;
+    std::vector<RRT::ICollidable*> obstacles_;
+    visualization_msgs::MarkerArray marr_;
+    visualization_msgs::Marker marker_;
+    size_t part_count_;
+};
 
 
 class HullVisualizer
@@ -216,8 +235,6 @@ private:
 };
 
 
-
-
 int main(int argc, char **argv){
     ros::init(argc, argv, "rrt");
     ros::console::set_logger_level(
@@ -253,9 +270,9 @@ int main(int argc, char **argv){
     
     auto rob = RRT::build_robot(n);
     auto hull_viz = HullVisualizer(rob, "world");
+
     auto obstacles = build_obstacles(n);
-    std::string frame_id = "world";
-    publish_obstacle_markers(obstacles, frame_id, "1", 1);
+    auto obst_viz = ObstacleVisualizer(obstacles, "world");
     
     ros::Rate loop_rate(30);
     unsigned int seq = 0;
@@ -265,7 +282,6 @@ int main(int argc, char **argv){
 
     while(ros::ok())
     {
-        
         ros::spinOnce();
 
         if (!cmd_queue.empty())
@@ -292,6 +308,7 @@ int main(int argc, char **argv){
             ROS_INFO("Solved path with %lu via points", traj.points.size());
         }
         hull_viz.update();
+        obst_viz.update();
         loop_rate.sleep();
     }
     return 0;

@@ -443,4 +443,88 @@
       link="elfin_dummy_gripper" />
   </joint>
   
+  <!--Dummy links for additional collision volumes-->
+  <joint name="elfin_joint1_a"
+    type="fixed">
+    <origin
+      xyz="0.03 0.165 0"
+      rpy="0 0 0" />
+    <parent
+      link="elfin_link1" />
+    <child
+      link="elfin_link1_a" />
+  </joint>
+  <link name="elfin_link1_a"/>
+
+  <joint name="elfin_joint2_a"
+    type="fixed">
+    <origin
+      xyz="-0.04 0.09 0"
+      rpy="0 0 0" />
+    <parent
+      link="elfin_link2" />
+    <child
+      link="elfin_link2_a" />
+  </joint>
+  <link name="elfin_link2_a"/>
+
+  <joint name="elfin_joint2_b"
+    type="fixed">
+    <origin
+      xyz="-0.04 0.17 0"
+      rpy="0 0 0" />
+    <parent
+      link="elfin_link2" />
+    <child
+      link="elfin_link2_b" />
+  </joint>
+  <link name="elfin_link2_b"/>
+
+  <joint name="elfin_joint3_a"
+    type="fixed">
+    <origin
+      xyz="0.085 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="elfin_link3" />
+    <child
+      link="elfin_link3_a" />
+  </joint>
+  <link name="elfin_link3_a"/>
+
+  <joint name="elfin_joint4_a"
+    type="fixed">
+    <origin
+      xyz="-0.08 0.07 0"
+      rpy="0 0 0" />
+    <parent
+      link="elfin_link4" />
+    <child
+      link="elfin_link4_a" />
+  </joint>
+  <link name="elfin_link4_a"/>
+
+  <joint name="elfin_joint4_b"
+    type="fixed">
+    <origin
+      xyz="-0.095 0.14 0"
+      rpy="0 0 0" />
+    <parent
+      link="elfin_link4" />
+    <child
+      link="elfin_link4_b" />
+  </joint>
+  <link name="elfin_link4_b"/>
+
+  <joint name="elfin_joint4_c"
+    type="fixed">
+    <origin
+      xyz="-0.09 0.22 0"
+      rpy="0 0 0" />
+    <parent
+      link="elfin_link4" />
+    <child
+      link="elfin_link4_c" />
+  </joint>
+  <link name="elfin_link4_c"/>
 </robot>

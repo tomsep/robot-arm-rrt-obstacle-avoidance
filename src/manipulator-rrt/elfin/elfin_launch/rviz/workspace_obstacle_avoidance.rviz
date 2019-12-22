@@ -7,7 +7,6 @@ Panels:
         - /Global Options1
         - /RobotModel1/Links1
         - /RobotModel1/Links1/elfin_end_link1
-        - /MarkerArray1
       Splitter Ratio: 0.510489523
     Tree Height: 565
   - Class: rviz/Selection
@@ -84,21 +83,49 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        elfin_link1_a:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         elfin_link2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
+        elfin_link2_a:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        elfin_link2_b:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         elfin_link3:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
+        elfin_link3_a:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         elfin_link4:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
+        elfin_link4_a:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        elfin_link4_b:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        elfin_link4_c:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         elfin_link5:
           Alpha: 1
           Show Axes: false
@@ -149,13 +176,20 @@ Visualization Manager:
         "": true
       Queue Size: 100
       Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /obstacle_markers
+      Name: MarkerArray
+      Namespaces:
+        "": true
+      Queue Size: 100
+      Value: true
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: visualization_marker
       Name: Marker
       Namespaces:
         "": true
-        1: true
       Queue Size: 100
       Value: true
   Enabled: true
@@ -183,25 +217,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1.00526786
+      Distance: 1.67176306
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.0819535851
-        Y: -0.150853246
-        Z: 0.556773365
+        X: -0.035488911
+        Y: -0.20987536
+        Z: 0.548624814
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.349796981
+      Pitch: 0.734796762
       Target Frame: elfin_base
       Value: Orbit (rviz)
-      Yaw: 3.39039111
+      Yaw: 0.477223366
     Saved: ~
 Window Geometry:
   Displays:
@@ -219,5 +253,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1200
-  X: 550
-  Y: 44
+  X: 637
+  Y: 34
