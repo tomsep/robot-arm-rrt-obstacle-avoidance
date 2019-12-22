@@ -1,0 +1,15 @@
+<launch>
+  <rosparam file="$(find elfin_control)/config/time_delay_control.yaml" command="load"/>
+  
+  <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
+    output="screen" ns="/elfin" args="joint_state_controller time_delay_controller"/>
+
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" ns="/elfin"/>
+
+  <node name="elfin_rqt_state" pkg="rqt_gui" type="rqt_gui" respawn="false"
+	output="screen" args="--perspective-file $(find elfin_control)/launch/time_delay_control_perspective/joint2_state.perspective"/>
+
+  <node name="elfin_rqt_error" pkg="rqt_gui" type="rqt_gui" respawn="false"
+	output="screen" args="--perspective-file $(find elfin_control)/launch/time_delay_control_perspective/joint2_error.perspective"/>
+
+</launch>

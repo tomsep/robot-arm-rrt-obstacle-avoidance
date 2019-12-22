@@ -1,0 +1,14 @@
+<launch>
+
+
+
+  <include file="$(find elfin_gazebo)/launch/elfin3_empty_world.launch" />
+
+  <include file="$(find elfin_control)/launch/course_exercises/workspace_obstacle_avoidance.launch" />
+
+  <!-- Relaying joint states so that RobotState is updated -->
+  <node name="relay_joint_states" pkg="topic_tools" type="relay"
+     args="/elfin/joint_states /joint_states"/>
+
+  <node type="rviz" name="rviz" pkg="rviz" args="-d $(find elfin_launch)/rviz/workspace_obstacle_avoidance.rviz" />
+</launch>

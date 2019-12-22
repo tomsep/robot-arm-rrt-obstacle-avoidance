@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<package>
+  <name>arm_controllers</name>
+  <version>0.0.3</version>
+  <description>Robot Arm Controllers</description>
+
+  <maintainer email="kyungmin5257@gmail.com">kyungmin</maintainer>
+  <maintainer email="babchol@gmail.com">Hancheol Choi</maintainer>
+  <maintainer email="kjy880527@gmail.com">Jungyeong kyungmin5257</maintainer>
+
+
+  <license>MIT</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>controller_interface</build_depend>
+  <build_depend>urdf</build_depend>
+  <build_depend>control_msgs</build_depend>
+  <build_depend>kdl_parser</build_depend>
+  <build_depend>realtime_tools</build_depend>
+  <build_depend>angles</build_depend>
+  <build_depend>dynamic_reconfigure</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>tf</build_depend>
+
+  <run_depend>controller_interface</run_depend>
+  <run_depend>urdf</run_depend>
+  <run_depend>control_msgs</run_depend>
+  <run_depend>kdl_parser</run_depend>
+  <run_depend>realtime_tools</run_depend>
+  <run_depend>angles</run_depend>
+  <run_depend>dynamic_reconfigure</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>tf</run_depend>
+
+   <export>
+    <controller_interface plugin="${prefix}/controller_plugins.xml" />
+  </export>
+
+</package>

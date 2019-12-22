@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package>
+  <name>elfin_launch</name>
+  <version>0.0.0</version>
+  <description>The elfin_launch package</description>
+
+  <maintainer email="kyungmin5257@gmail.com">kyungmin</maintainer>
+  <maintainer email="babchol@gmail.com">Hancheol Choi</maintainer>
+  <maintainer email="kjy880527@gmail.com">Jungyeong Kim</maintainer>
+
+  <license>MIT</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+</package>

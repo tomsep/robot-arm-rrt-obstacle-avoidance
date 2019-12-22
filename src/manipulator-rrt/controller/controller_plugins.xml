@@ -1,0 +1,16 @@
+<library path="lib/libarm_controllers">
+
+    <class name="arm_controllers/WorkspaceObstacleAvoidance" type="arm_controllers::WorkspaceObstacleAvoidance" base_class_type="controller_interface::ControllerBase">
+    <description>
+      WorkspaceObstacleAvoidance
+    </description>
+  </class>
+
+  <class name="arm_controllers/WorkspaceMultipointObstacleAvoidance" type="arm_controllers::WorkspaceMultipointObstacleAvoidance" base_class_type="controller_interface::ControllerBase">
+    <description>
+      WorkspaceMultipointObstacleAvoidance
+    </description>
+  </class>
+
+</library>
+

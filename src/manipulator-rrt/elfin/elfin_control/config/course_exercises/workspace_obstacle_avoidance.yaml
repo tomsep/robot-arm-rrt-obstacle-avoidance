@@ -1,0 +1,29 @@
+elfin:
+    joint_state_controller:
+      type: joint_state_controller/JointStateController
+      publish_rate: 1000
+    
+    workspace_obstacle_avoidance:
+      type: arm_controllers/WorkspaceObstacleAvoidance
+      joints:
+        - elfin_joint1
+        - elfin_joint2
+        - elfin_joint3
+        - elfin_joint4
+        - elfin_joint5
+        - elfin_joint6
+      gains:
+        elfin_joint1: 
+          pid: {p: 700, i: 0, d: 0.15}
+        elfin_joint2: 
+          pid: {p: 700, i: 0, d: 0.15}
+        elfin_joint3: 
+          pid: {p: 700, i: 0, d: 0.15}
+        elfin_joint4: 
+          pid: {p: 700, i: 0, d: 0.15}
+        elfin_joint5: 
+          pid: {p: 700, i: 0, d: 0.15}
+        elfin_joint6: 
+          pid: {p: 700, i: 0, d: 0.15}
+      root_link: elfin_base
+      tip_link: elfin_end_link

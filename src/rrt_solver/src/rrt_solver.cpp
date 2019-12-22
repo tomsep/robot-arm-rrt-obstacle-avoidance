@@ -265,7 +265,7 @@ double adapted_relative_step_size(
     // which will evenly interpolate q
     // with maximum absolute step of 'spacing'
 
-    auto maxdif = (q_to - q_from).maxCoeff();
+    auto maxdif = (q_to - q_from).cwiseAbs().maxCoeff();
 
     int step_count = (int)(maxdif / spacing + 0.5);  // +0.5 to ceil
     if (step_count == 0)

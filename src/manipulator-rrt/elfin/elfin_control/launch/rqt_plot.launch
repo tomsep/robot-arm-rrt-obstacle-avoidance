@@ -1,0 +1,13 @@
+<launch>
+  <node name="elfin_rqt_state" pkg="rqt_gui" type="rqt_gui" respawn="false"
+	  output="screen" args="--perspective-file $(find elfin_control)/launch/gravity_comp_control_perspective/joint4_state.perspective"/>
+
+  <node name="elfin_rqt_error" pkg="rqt_gui" type="rqt_gui" respawn="false"
+	  output="screen" args="--perspective-file $(find elfin_control)/launch/gravity_comp_control_perspective/joint4_error.perspective"/>
+
+  <node name="elfin_rqt_effort" pkg="rqt_gui" type="rqt_gui" respawn="false"
+	  output="screen" args="--perspective-file $(find elfin_control)/launch/gravity_comp_control_perspective/joint4_effort.perspective"/>
+
+  <node name="elfin_rqt_tuning" pkg="rqt_gui" type="rqt_gui" respawn="false"
+	  output="screen" args="--perspective-file $(find elfin_control)/launch/gravity_comp_control_perspective/tuning.perspective"/>
+</launch>
