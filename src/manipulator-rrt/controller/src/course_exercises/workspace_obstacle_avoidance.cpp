@@ -387,8 +387,8 @@ class WorkspaceObstacleAvoidance : public controller_interface::Controller<hardw
 
         points.pose.orientation.w = line_strip.pose.orientation.w = line_list.pose.orientation.w = 1.0;
         points.type = visualization_msgs::Marker::POINTS;
-        points.scale.x = 0.004;
-        points.scale.y = 0.004;
+        points.scale.x = 0.007;
+        points.scale.y = 0.007;
         points.color.g = 1.0f;
         points.color.a = 1.0;
 
@@ -474,6 +474,11 @@ class WorkspaceObstacleAvoidance : public controller_interface::Controller<hardw
                     }
                     rrt_pub_.publish(q_msg);
                     ROS_INFO("Published path solve request");
+
+                    // Publish desired x
+                    KDL::Frame frm_tmp;
+                    fk_solver_->JntToCart(qd_, frm_tmp);
+                    pub_xd_->publish(frm_tmp, root_link_name_);
                 }
             }
             else if (!path_queue_.empty())
@@ -484,6 +489,8 @@ class WorkspaceObstacleAvoidance : public controller_interface::Controller<hardw
                 ROS_INFO("Received path of size %lu", current_trajectory_.points.size());
                 publish_trajectory(current_trajectory_);
                 lin_motion_.reset(new LinearJointMotion(current_trajectory_, max_vel_));
+
+
             }
         }
 
@@ -503,9 +510,6 @@ class WorkspaceObstacleAvoidance : public controller_interface::Controller<hardw
                     qd_ddot_(i) = 0;
                 }
                 ROS_INFO_STREAM("" << qd_.data.transpose());
-                KDL::Frame frm;
-                fk_solver_->JntToCart(qd_, frm);
-                pub_xd_->publish(frm, root_link_name_);
                 planner_->replan(q_, qd_dot_, qd_ddot_, qd_, qd_dot_, qd_ddot_, 2, dt);
                 jogging_ = true;
                 //current_trajectory_.points.pop_back();
@@ -522,37 +526,7 @@ class WorkspaceObstacleAvoidance : public controller_interface::Controller<hardw
                 }
                 planner_->replan(q_, qd_dot_, qd_ddot_, qd_, qd_dot_, qd_ddot_, 0.25, dt);
             }
-            /*
-            else if (!cart_queue_.empty())
-            {   
-                ROS_INFO("Planning cart move");
-                std::array<double, NM_JOINTS> xd_cmd = cart_queue_.front();
-                cart_queue_.pop();
-                xd_(0) = xd_cmd[0];
-                xd_(1) = xd_cmd[1];
-                xd_(2) = xd_cmd[2];
-                xd_(3) = xd_cmd[3] * D2R;
-                xd_(4) = xd_cmd[4] * D2R;
-                xd_(5) = xd_cmd[5] * D2R;
 
-                xd_dot_(0) = 0;
-                xd_dot_(1) = 0;
-                xd_dot_(2) = 0;
-                xd_dot_(3) = 0;
-                xd_dot_(4) = 0;
-                xd_dot_(5) = 0;
-
-                xd_ddot_(0) = 0;
-                xd_ddot_(1) = 0;
-                xd_ddot_(2) = 0;
-                xd_ddot_(3) = 0;
-                xd_ddot_(4) = 0;
-                xd_ddot_(5) = 0;
-                
-                planner_->replan(x_, x_dot_, x_ddot_, xd_, xd_dot_, xd_ddot_, 4.0, dt);
-                jogging_ = false;
-            }
-            */
         }
 
         if (jogging_)
@@ -564,42 +538,19 @@ class WorkspaceObstacleAvoidance : public controller_interface::Controller<hardw
             }
             else
             {
-                ROS_ERROR("WAS NULLPTR");
+                //ROS_ERROR("WAS NULLPTR");
             }
             
             id_solver_->JntToGravity(q_, G_); 
             e_.data = qd_.data - q_.data;
             tau_d_.data = G_.data + (Kp_.data.cwiseProduct(e_.data) - Kd_.data.cwiseProduct(qdot_.data));
         }
-        else
-        {   
-            
-            planner_->trajectory_point(xd_, xd_dot_, xd_ddot_);
 
-            J_inv_ = J_.data.inverse();
-
-            // *** 2.2 Compute model(M,C,G) ***
-            id_solver_->JntToMass(q_, M_);
-            id_solver_->JntToCoriolis(q_, qdot_, C_);
-            id_solver_->JntToGravity(q_, G_); 
-
-            // *** 2.3 Apply Torque Command to Actuator ***
-            aux_d_.data = Kp_.data.cwiseProduct(xd_.data - x_.data) + Kd_.data.cwiseProduct(xd_dot_.data - x_dot_.data) + xd_ddot_.data - x_ddot_.data;
-            tau_d_.data = M_.data * J_inv_ * aux_d_.data + C_.data + G_.data;
-
-        }
 
         for (int i = 0; i < n_joints_; i++)
         {  
             joints_[i].setCommand(tau_d_(i));
         }
-
-        // ********* 3. data 저장 *********
-        //save_data();
-
-        // ********* 4. state 출력 *********
-        //print_state();
-
         
     }
 
@@ -754,7 +705,7 @@ class WorkspaceObstacleAvoidance : public controller_interface::Controller<hardw
   private:
     // others
     double t;
-    double max_vel_ = 0.1;  // rad/s
+    double max_vel_ = 0.3;  // rad/s
     ros::NodeHandle n_public;  // for non-private namespace
     bool jogging_ = true;
     boost::scoped_ptr<helpers::JointMotionPlan> planner_;

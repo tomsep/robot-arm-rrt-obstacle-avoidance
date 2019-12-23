@@ -129,7 +129,7 @@ class PointVisualizer
 public:
     PointVisualizer(
         std::shared_ptr<RRT::RobotHull> rob,
-        std::string frame_id)
+        const std::string frame_id)
     {
         n_ = ros::NodeHandle();
         pub_ = n_.advertise<visualization_msgs::MarkerArray>("point_markers", 1, true);
@@ -154,7 +154,6 @@ public:
         marker_.action = visualization_msgs::Marker::ADD;
         marker_.type = visualization_msgs::Marker::SPHERE;
         marker_.pose.orientation.w = 1.0;
-
         marker_.color.r = 0.0f;
         marker_.color.g = 0.5f;
         marker_.color.b = 1.0f;
@@ -162,15 +161,16 @@ public:
 
     }
 
-    void update(std::vector<RRT::Node*> nodes)
+    void update(std::vector<RRT::Node*> nodes, const double colors[3], const std::string namesp = "")
     {
         
-        if (end_link_idx_ == 0)
-        {
-            return;
-        }
+        marker_.color.r = colors[0];
+        marker_.color.g = colors[1];
+        marker_.color.b = colors[2];
+        
         const double r = 0.005;
         KDL::JntArray q_tmp_(6);
+        marker_.ns = namesp;
         for (size_t i = 0; i < nodes.size(); i++)
         {
             marker_.header.stamp = ros::Time::now();
@@ -193,6 +193,34 @@ public:
         marr_.markers.clear();
         
     }
+    void append(std::vector<RRT::Node*> nodes)
+    {
+        
+        const double r = 0.005;
+        KDL::JntArray q_tmp_(6);
+        for (size_t i = 0; i < nodes.size(); i++)
+        {
+            marker_.header.stamp = ros::Time::now();
+            marker_.id = i + point_count_;
+            
+            q_tmp_.data = nodes.at(i)->q_;
+            rob_->fk_solvers.at(end_link_idx_).JntToCart(q_tmp_, frame_tmp_);
+
+
+            marker_.scale.x = r * 2;
+            marker_.scale.y = r * 2;
+            marker_.scale.z = r * 2;
+
+            marker_.pose.position.x = frame_tmp_.p(0);
+            marker_.pose.position.y = frame_tmp_.p(1);
+            marker_.pose.position.z = frame_tmp_.p(2);
+            marr_.markers.push_back(marker_);
+        }
+
+        point_count_ += nodes.size();
+        pub_.publish(marr_);
+        marr_.markers.clear();
+    }
 
 
 private:
@@ -204,6 +232,7 @@ private:
     KDL::Frame frame_tmp_;
     KDL::JntArray q_;
     int end_link_idx_;
+    size_t point_count_;
 };
 
 std::shared_ptr<RobotHull> build_robot(ros::NodeHandle nh);

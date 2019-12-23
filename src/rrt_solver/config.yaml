@@ -34,16 +34,16 @@ solver:
   clamping:
     norm:
       - 4.0
-      - 0.05
+      - 0.1
       - 2.0
-      - 0.2
+      - 0.4
     iter:
-      - 100
-      - 50
       - 200
+      - 50
+      - 400
       - 100
-  merge_attempt_interval: 500
-  maxiter: 1001
+  merge_attempt_interval: 1200
+  maxiter: 1201
 
 obstacles:
   x:

@@ -466,13 +466,22 @@ std::vector<Eigen::Matrix<double, 6, 1>> solver
             }
         }
 
+        if (i % 50 == 0 && viz.get() != nullptr)
+        {
+            const double color1[3] = {0, 0.5, 1.0};
+            viz->update(tree1->nodes, color1, "tree1");
+            const double color2[3] = {0, 1.0, 0.5};
+            viz->update(tree2->nodes, color2, "tree2");
+            ros::spinOnce();
+        }
+
         if (i % try_merge_interval == 0 && i != 0)
         {
             // Attempt merge
             ROS_INFO("Attempting to merge trees");
             auto closest = tree1->closest_nodepairs_of_trees(tree2.get());
 
-            for (size_t ipair = 0; ipair < (closest.size() / 4); ipair++)
+            for (size_t ipair = 0; ipair < (closest.size() / 2); ipair++)
             {
                 auto first = closest.at(ipair).first;
                 auto second = closest.at(ipair).second;
@@ -523,11 +532,6 @@ std::vector<Eigen::Matrix<double, 6, 1>> solver
         
     }
     ROS_ERROR("Failed to find a path!");
-    if (viz.get() != nullptr)
-    {
-        viz->update(tree1->nodes);
-        ros::spinOnce();
-    }
     return std::vector<Eigen::Matrix<double, 6, 1>>();
 
 } 
