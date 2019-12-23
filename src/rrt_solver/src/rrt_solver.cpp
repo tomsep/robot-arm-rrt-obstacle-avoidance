@@ -4,6 +4,7 @@
 #include <memory>
 #include <tuple>
 #include <vector>
+#include <bits/stdc++.h> 
 
 #include <urdf/model.h>
 
@@ -18,6 +19,19 @@
 
 namespace RRT
 {
+
+template <typename A, typename B>
+void unzip(
+    const std::vector<std::pair<A, B>> &zipped, 
+    std::vector<A> &a, 
+    std::vector<B> &b)
+{
+    for(size_t i=0; i<a.size(); i++)
+    {
+        a[i] = zipped[i].first;
+        b[i] = zipped[i].second;
+    }
+}
 
 bool Sphere::collides_with_sphere(Sphere& sphere)
 {
@@ -177,29 +191,54 @@ void Tree::apply_merge(Node* parent_tail, Node* child_tail)
 }
 
 
-std::tuple<Node*, Node*> Tree::closest_nodepair_of_trees(Tree* tree)
+std::vector<std::pair<Node*, Node*>> Tree::closest_nodepairs_of_trees(Tree* tree)
 {
-    std::vector<Node*>::iterator i;
-    std::vector<Node*>::iterator i_other;
-    double shortest_distance = 1000000;
-    Node* this_node;
-    Node* other_node;
-    
+    using std::vector;
+    using std::pair;
+
+    vector<Node*>::iterator i;
+    vector<Node*>::iterator i_other;
+    //double shortest_distance = 1000000;
+    //Node* this_node;
+    //Node* other_node;
+
+    vector<double> distances;
+    distances.reserve(nodes.size() * tree->nodes.size());
+    vector<pair<Node*, Node*>> nodepairs;
+    nodepairs.reserve(nodes.size() * tree->nodes.size());
+
+
     for (i = nodes.begin();  i < nodes.end(); ++i)
     {
 
         for (i_other = tree->nodes.begin();  i_other < tree->nodes.end(); ++i_other)
         {
             double distance = configuration_distance((*i)->q_, (*i_other)->q_);
+            distances.push_back(distance);
+            nodepairs.push_back(std::make_pair(*i, *i_other));
+            /*
             if (distance < shortest_distance)
             {
                 shortest_distance = distance;
                 this_node = *i;
                 other_node = *i_other;
-            } 
+            }*/
+            
         }
     }
-    return std::make_tuple(this_node, other_node);
+    // Sort the vector of pairs
+    vector<pair<double, pair<Node*, Node*>>> zipped;
+    zip(distances, nodepairs, zipped);
+    
+    std::sort(std::begin(zipped), std::end(zipped), 
+        [&](const auto& a, const auto& b)
+    {
+        return a.first < b.first;
+    });
+
+    unzip(zipped, distances, nodepairs);
+
+    return nodepairs;
 }
 
 
@@ -382,35 +421,78 @@ double configuration_distance(Eigen::Matrix<double, 6, 1> from, Eigen::Matrix<do
 }
 
 
-std::vector<Eigen::Matrix<double, 6, 1>> solver(std::shared_ptr<RobotHull> rob, std::vector<ICollidable*> obstacles, 
-                    Eigen::Matrix<double, 6, 1> start, Eigen::Matrix<double, 6, 1> goal,
-                    double spacing, double maxnorm, unsigned int try_merge_interval, unsigned int maxiter,
-                    std::shared_ptr<RRT::PointVisualizer> viz)
+std::vector<Eigen::Matrix<double, 6, 1>> solver
+(
+    std::shared_ptr<RobotHull> rob, 
+    std::vector<ICollidable*> obstacles, 
+    Eigen::Matrix<double, 6, 1> start, 
+    Eigen::Matrix<double, 6, 1> goal,
+    double spacing, 
+    unsigned int try_merge_interval, 
+    unsigned int maxiter,
+    std::shared_ptr<RRT::PointVisualizer> viz,
+    std::vector<std::pair<int, double>> clamp_levels)
 {
     auto tree1 = std::make_shared<RRT::Tree>(start);
     auto tree2 = std::make_shared<RRT::Tree>(goal);
+    
+    //size_t clamp_idx = 0;
+    //double clamp_norm = clamps.at(clamp_idx);
+    
+    using std::vector;
+    using std::pair;
+
+    // TEMP
+    //clamp_levels.push_back(std::make_pair(50, 2.0));
+    //clamp_levels.push_back(std::make_pair(100, 1.0));
+    //clamp_levels.push_back(std::make_pair(10000, 0.2));
+
+    auto clamp_it = clamp_levels.begin();
+    auto clamp_level = *clamp_it;
+    ROS_INFO("Using clamp norm (%f) for %d iterations", clamp_level.second, clamp_level.first);
 
     for (unsigned int i = 0; i < maxiter; i++)
     {
+        
+        if (i > (unsigned)clamp_level.first && clamp_it != clamp_levels.end())
+        {
+            // Advance to next clamp level
+            clamp_it++;
+            if (clamp_it != clamp_levels.end())
+            {
+                clamp_level = *clamp_it;
+                ROS_INFO("Using clamp norm (%f) for %d iterations", 
+                    clamp_level.second, clamp_level.first);
+            }
+        }
+
         if (i % try_merge_interval == 0 && i != 0)
         {
-            // TRY merge
-            auto closest = tree1->closest_nodepair_of_trees(tree2.get());
+            // Attempt merge
+            ROS_INFO("Attempting to merge trees");
+            auto closest = tree1->closest_nodepairs_of_trees(tree2.get());
 
-            bool collisionfree = collision_free_line(
-                std::get<0>(closest)->q_, std::get<1>(closest)->q_, spacing, rob, obstacles);
-            if (collisionfree)
+            for (size_t ipair = 0; ipair < (closest.size() / 4); ipair++)
             {
-                // Merge
-                tree1->apply_merge(std::get<0>(closest), std::get<1>(closest));
-
-                auto path = tree1->path();
-                std::vector<Eigen::Matrix<double, 6, 1>> joint_path;
-                for (auto path_node : path)
+                auto first = closest.at(ipair).first;
+                auto second = closest.at(ipair).second;
+                bool collisionfree = collision_free_line(
+                    first->q_, second->q_, 
+                    spacing, rob, obstacles);
+                if (collisionfree)
                 {
-                    joint_path.push_back(path_node->q_);
+                    // Merge
+                    ROS_INFO("Found collision free path");
+                    tree1->apply_merge(first, second);
+
+                    auto path = tree1->path();
+                    std::vector<Eigen::Matrix<double, 6, 1>> joint_path;
+                    for (auto path_node : path)
+                    {
+                        joint_path.push_back(path_node->q_);
+                    }
+                    return joint_path;
                 }
-                return joint_path;
             }
         }
         else
@@ -419,7 +501,7 @@ std::vector<Eigen::Matrix<double, 6, 1>> solver(std::shared_ptr<RobotHull> rob, 
             auto q_rand = Eigen::Matrix<double, 6, 1>::Random();
 
             auto nearest_node = tree1->nearest_node(q_rand);
-            auto clamped = clamp(nearest_node->q_, q_rand, maxnorm);
+            auto clamped = clamp(nearest_node->q_, q_rand, clamp_level.second);
             bool collisionfree = collision_free_line(
                 nearest_node->q_, clamped, spacing, rob, obstacles);
             
@@ -429,7 +511,7 @@ std::vector<Eigen::Matrix<double, 6, 1>> solver(std::shared_ptr<RobotHull> rob, 
             }
             // Same for tree2 using same q_rand
             nearest_node = tree2->nearest_node(q_rand);
-            clamped = clamp(nearest_node->q_, q_rand, maxnorm);
+            clamped = clamp(nearest_node->q_, q_rand, clamp_level.second);
             collisionfree = collision_free_line(
                 nearest_node->q_, clamped, spacing, rob, obstacles);
             
@@ -440,7 +522,7 @@ std::vector<Eigen::Matrix<double, 6, 1>> solver(std::shared_ptr<RobotHull> rob, 
         }
         
     }
-    ROS_ERROR("Failed to find path");
+    ROS_ERROR("Failed to find a path!");
     if (viz.get() != nullptr)
     {
         viz->update(tree1->nodes);

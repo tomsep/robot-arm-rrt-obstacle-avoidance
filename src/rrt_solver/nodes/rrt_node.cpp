@@ -248,7 +248,10 @@ int main(int argc, char **argv){
 
     
     // Load solver params
-    double spacing, maxnorm;
+    double spacing;
+    std::vector<double> clamp_norms;
+    std::vector<double> clamps;
+    std::vector<int> clamps_iters;
     int try_merge_interval, maxiter;
 
     if (!n.getParam("solver/spacing", spacing))
@@ -256,10 +259,18 @@ int main(int argc, char **argv){
         ROS_ERROR("Could not find spacing param");
     }
 
-    if (!n.getParam("solver/maxnorm", maxnorm))
+    if (!n.getParam("solver/clamping/norm", clamp_norms))
     {
-        ROS_ERROR("Could not find maxnorm param");
+        ROS_ERROR("Could not find clamping norm params");
     }
+
+    if (!n.getParam("solver/clamping/iter", clamps_iters))
+    {
+        ROS_ERROR("Could not find clamping norm params");
+    }
+
+    std::vector<std::pair<int, double>> clamp_levels;
+    RRT::zip(clamps_iters, clamp_norms, clamp_levels);
 
     if (!n.getParam("solver/merge_attempt_interval", try_merge_interval))
     {
@@ -302,16 +313,16 @@ int main(int argc, char **argv){
 
             auto path = RRT::solver(
                 rob, obstacles, start, goal, spacing, 
-                maxnorm, try_merge_interval, maxiter, point_viz);
-
-            path = path_reduction(path, rob, obstacles, spacing);
+                try_merge_interval, maxiter, point_viz, clamp_levels);
+        
+            path = RRT::path_reduction(path, rob, obstacles, spacing);
             ROS_INFO("Solved path with %lu via points", path.size());
-            
             auto traj = joint_trajectory(path, seq);
+            
             seq++;
             path_pub.publish(traj);
-            ROS_INFO("Solved path with %lu via points", traj.points.size());
         }
+
         hull_viz.update();
         obst_viz.update();
         loop_rate.sleep();

@@ -31,25 +31,39 @@ robot:
     - 0.05
 solver:
   spacing: 0.002
-  maxnorm: 0.1
+  clamping:
+    norm:
+      - 4.0
+      - 0.05
+      - 2.0
+      - 0.2
+    iter:
+      - 100
+      - 50
+      - 200
+      - 100
   merge_attempt_interval: 500
-  maxiter: 5000
+  maxiter: 1001
 
 obstacles:
   x:
     - 0.22
-
+    - 0.25
+    - 0.25
 
   y:
     - 0
-
+    - -0.15
+    - 0.15
 
   z:
     - 0.6
-
+    - 0.55
+    - 0.55
 
   r:
     - 0.05
-
+    - 0.06
+    - 0.06
 
     

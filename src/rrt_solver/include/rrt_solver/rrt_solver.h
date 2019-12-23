@@ -19,6 +19,18 @@
 namespace RRT
 {
 
+template <typename A, typename B>
+void zip(
+    const std::vector<A> &a, 
+    const std::vector<B> &b, 
+    std::vector<std::pair<A,B>> &zipped)
+{
+    for(size_t i=0; i<a.size(); ++i)
+    {
+        zipped.push_back(std::make_pair(a[i], b[i]));
+    }
+}
+
 class Sphere;
 
 /* Interface for collidable shapes.
@@ -104,7 +116,7 @@ public:
     Node* nearest_node(Eigen::Matrix<double, 6, 1> q);
     void add_node(Node* parent, Eigen::Matrix<double, 6, 1> q);
     bool merge(Tree* tree, double limit);
-    std::tuple<Node*, Node*> closest_nodepair_of_trees(Tree* tree);
+    std::vector<std::pair<Node*, Node*>> closest_nodepairs_of_trees(Tree* tree);
     std::vector<Node*> path();
     Node* start;
     Node* end;
@@ -229,14 +241,17 @@ Eigen::Matrix<double, 6, 1> clamp(
 double configuration_distance(Eigen::Matrix<double, 6, 1> from, Eigen::Matrix<double, 6, 1> to);
 
 
-std::vector<Eigen::Matrix<double, 6, 1>> solver(
+std::vector<Eigen::Matrix<double, 6, 1>> solver
+(
     std::shared_ptr<RobotHull> rob, 
     std::vector<ICollidable*> obstacles, 
-    Eigen::Matrix<double, 6, 1> start,
+    Eigen::Matrix<double, 6, 1> start, 
     Eigen::Matrix<double, 6, 1> goal,
-    double spacing, double maxnorm,
-    unsigned int try_merge_interval, unsigned int maxiter,
-    std::shared_ptr<RRT::PointVisualizer> viz);
+    double spacing, 
+    unsigned int try_merge_interval, 
+    unsigned int maxiter,
+    std::shared_ptr<RRT::PointVisualizer> viz,
+    std::vector<std::pair<int, double>> clamps_levels);
 
 
 std::vector<Eigen::Matrix<double, 6, 1>> path_reduction(

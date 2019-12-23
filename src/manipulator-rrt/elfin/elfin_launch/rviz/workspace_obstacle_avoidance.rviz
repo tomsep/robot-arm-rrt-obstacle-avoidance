@@ -7,6 +7,7 @@ Panels:
         - /Global Options1
         - /RobotModel1/Links1
         - /RobotModel1/Links1/elfin_end_link1
+        - /MarkerArray3
       Splitter Ratio: 0.510489523
     Tree Height: 565
   - Class: rviz/Selection
@@ -189,7 +190,15 @@ Visualization Manager:
       Marker Topic: visualization_marker
       Name: Marker
       Namespaces:
-        "": true
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /point_markers
+      Name: MarkerArray
+      Namespaces:
+        {}
       Queue Size: 100
       Value: true
   Enabled: true
