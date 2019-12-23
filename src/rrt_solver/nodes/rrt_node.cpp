@@ -235,6 +235,9 @@ private:
 };
 
 
+
+
+
 int main(int argc, char **argv){
     ros::init(argc, argv, "rrt");
     ros::console::set_logger_level(
@@ -273,6 +276,8 @@ int main(int argc, char **argv){
 
     auto obstacles = build_obstacles(n);
     auto obst_viz = ObstacleVisualizer(obstacles, "world");
+
+    auto point_viz = std::make_shared<RRT::PointVisualizer>(rob, "world");
     
     ros::Rate loop_rate(30);
     unsigned int seq = 0;
@@ -297,7 +302,7 @@ int main(int argc, char **argv){
 
             auto path = RRT::solver(
                 rob, obstacles, start, goal, spacing, 
-                maxnorm, try_merge_interval, maxiter);
+                maxnorm, try_merge_interval, maxiter, point_viz);
 
             path = path_reduction(path, rob, obstacles, spacing);
             ROS_INFO("Solved path with %lu via points", path.size());

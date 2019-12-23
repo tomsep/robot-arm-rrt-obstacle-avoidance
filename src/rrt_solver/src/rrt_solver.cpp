@@ -384,7 +384,8 @@ double configuration_distance(Eigen::Matrix<double, 6, 1> from, Eigen::Matrix<do
 
 std::vector<Eigen::Matrix<double, 6, 1>> solver(std::shared_ptr<RobotHull> rob, std::vector<ICollidable*> obstacles, 
                     Eigen::Matrix<double, 6, 1> start, Eigen::Matrix<double, 6, 1> goal,
-                    double spacing, double maxnorm, unsigned int try_merge_interval, unsigned int maxiter)
+                    double spacing, double maxnorm, unsigned int try_merge_interval, unsigned int maxiter,
+                    std::shared_ptr<RRT::PointVisualizer> viz)
 {
     auto tree1 = std::make_shared<RRT::Tree>(start);
     auto tree2 = std::make_shared<RRT::Tree>(goal);
@@ -440,6 +441,11 @@ std::vector<Eigen::Matrix<double, 6, 1>> solver(std::shared_ptr<RobotHull> rob, 
         
     }
     ROS_ERROR("Failed to find path");
+    if (viz.get() != nullptr)
+    {
+        viz->update(tree1->nodes);
+        ros::spinOnce();
+    }
     return std::vector<Eigen::Matrix<double, 6, 1>>();
 
 } 

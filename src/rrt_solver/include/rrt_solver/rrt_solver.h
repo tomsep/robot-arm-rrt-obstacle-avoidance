@@ -12,6 +12,8 @@
 #include <kdl/chainfksolverpos_recursive.hpp>
 #include <kdl/chain.hpp>
 #include <kdl/tree.hpp>
+#include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
 
 
 namespace RRT
@@ -110,6 +112,88 @@ public:
 };
 
 
+class PointVisualizer
+{
+public:
+    PointVisualizer(
+        std::shared_ptr<RRT::RobotHull> rob,
+        std::string frame_id)
+    {
+        n_ = ros::NodeHandle();
+        pub_ = n_.advertise<visualization_msgs::MarkerArray>("point_markers", 1, true);
+        rob_ = rob;
+
+        // Find any 6 joint part
+        end_link_idx_ = -1;
+        for (size_t i = 0; i < rob_->joint_arrs.size(); i++)
+        {
+            if ((*rob_->joint_arrs.at(i)).rows() == 6)
+            {
+                end_link_idx_ = i;
+            }
+        }
+        if (end_link_idx_ == -1)
+        {
+            ROS_ERROR("No 6 joint robot parts. Will not attempt to visualize points.");
+        }
+
+        // Set default marker params
+        marker_.header.frame_id = frame_id;
+        marker_.action = visualization_msgs::Marker::ADD;
+        marker_.type = visualization_msgs::Marker::SPHERE;
+        marker_.pose.orientation.w = 1.0;
+
+        marker_.color.r = 0.0f;
+        marker_.color.g = 0.5f;
+        marker_.color.b = 1.0f;
+        marker_.color.a = 1.00;
+
+    }
+
+    void update(std::vector<RRT::Node*> nodes)
+    {
+        
+        if (end_link_idx_ == 0)
+        {
+            return;
+        }
+        const double r = 0.005;
+        KDL::JntArray q_tmp_(6);
+        for (size_t i = 0; i < nodes.size(); i++)
+        {
+            marker_.header.stamp = ros::Time::now();
+            marker_.id = i;
+            q_tmp_.data = nodes.at(i)->q_;
+            rob_->fk_solvers.at(end_link_idx_).JntToCart(q_tmp_, frame_tmp_);
+
+
+            marker_.scale.x = r * 2;
+            marker_.scale.y = r * 2;
+            marker_.scale.z = r * 2;
+
+            marker_.pose.position.x = frame_tmp_.p(0);
+            marker_.pose.position.y = frame_tmp_.p(1);
+            marker_.pose.position.z = frame_tmp_.p(2);
+            marr_.markers.push_back(marker_);
+        }
+
+        pub_.publish(marr_);
+        marr_.markers.clear();
+        
+    }
+
+
+private:
+    ros::NodeHandle n_;
+    ros::Publisher pub_;
+    std::shared_ptr<RRT::RobotHull> rob_;
+    visualization_msgs::MarkerArray marr_;
+    visualization_msgs::Marker marker_;
+    KDL::Frame frame_tmp_;
+    KDL::JntArray q_;
+    int end_link_idx_;
+};
+
 std::shared_ptr<RobotHull> build_robot(ros::NodeHandle nh);
 
 
@@ -151,7 +235,8 @@ std::vector<Eigen::Matrix<double, 6, 1>> solver(
     Eigen::Matrix<double, 6, 1> start,
     Eigen::Matrix<double, 6, 1> goal,
     double spacing, double maxnorm,
-    unsigned int try_merge_interval, unsigned int maxiter);
+    unsigned int try_merge_interval, unsigned int maxiter,
+    std::shared_ptr<RRT::PointVisualizer> viz);
 
 
 std::vector<Eigen::Matrix<double, 6, 1>> path_reduction(

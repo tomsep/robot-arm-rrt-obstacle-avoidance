@@ -159,7 +159,8 @@ TEST_F(MyTestSuite2, solver_intergation_test)
   double maxnorm = 0.2;
   unsigned int try_merge_interval = 1000;
   unsigned int maxiter = 100000;
-  auto path = RRT::solver(rob, obstacles, start, goal, spacing, maxnorm, try_merge_interval, maxiter);
+  std::shared_ptr<RRT::PointVisualizer> pviz_dummy;
+  auto path = RRT::solver(rob, obstacles, start, goal, spacing, maxnorm, try_merge_interval, maxiter, pviz_dummy);
 
   ASSERT_EQ(path.size() >= 2, true);
 }
