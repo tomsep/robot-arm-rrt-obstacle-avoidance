@@ -1,82 +1,76 @@
-## CMDS
-catkin_make -DCMAKE_BUILD_TYPE=Debug
-catkin_make run_tests -DCMAKE_BUILD_TYPE=Debug
+![](https://img.shields.io/badge/implementation-C%2B%2B-blue) ![](https://img.shields.io/badge/license-MIT-green) ![](https://img.shields.io/badge/ROS-Kinetic-blue)
+# 6-DoF Robot Arm Obstacle avoidance
 
-rosrun xacro xacro --inorder '/media/tomi/Data/documents/software/advanced_robotics_course/catkin_ws/src/arm-control/elfin/elfin_description/urdf/elfin3.urdf.xacro' >> urdf.urdf
+The objective is to find **collision free path** from _start_ to _goal_ position even in the presence of multiple obstacles. RRT based (rapidly-exploring random tree) method is used to explore the collision free movement space.
 
-rostopic pub -1 /elfin/workspace_obstacle_avoidance/command_jog std_msgs/Float64MultiArray "{layout: {dim: [], data_offset: 0}, data: [-2.2084,   64.9009,   91.0931,    2.7517,   63.9848,   81.7514]}"
-
-rostopic pub -1 /elfin/workspace_obstacle_avoidance/command_jog std_msgs/Float64MultiArray "{layout: {dim: [], data_offset: 0}, data: [-0.68006,   -1.76934,   63.14618,    1.22386,   25.14582,   82.83806]}"
+ROS controller template and [Elfin robot](http://wiki.ros.org/Robots/Elfin) assets were adapted from [https://github.com/modulabs/arm-control](https://github.com/modulabs/arm-control).
 
 
-roslaunch rrt_solver rrt.launch
+**Implemented for this project**:
 
-## Prerequisite
+* Pathfinding using rapidly-exploring random tree (RRT)
+* Collision detection between the robot and the obstacles
+* Motion controller
+* Visualizations (collision volume, obstacles, point cloud)
+
+![demogif](https://i.imgur.com/bBwjW1I.gif)
+
+Fig 1: Robot finding its way past the solid green obstacles.
+
+Fig 1 demonstrates how the space is explored using two trees, one starting at _start_ position and the other at _goal_. Connections between the trees' points are not visualized because in 3D these connections would be non-linear.
+
+The green see-through field is the robot's approximate collision volume.
+This is the volume that is considered when computing collisions with the obstacles.
+
+Solid green spheres are the obstacles that must be avoided when moving towards _goal_ position.
+When collision free path is found it is forwarded to the motion controller and the robot begins moving.
+
+
+## Pathfinding using rapidly-exploring random tree (RRT)
+
+
+![RRT 2D example](https://upload.wikimedia.org/wikipedia/commons/6/62/Rapidly-exploring_Random_Tree_%28RRT%29_500x373.gif)
+
+Fig 2: Tree expansion in 2D. Animation from [Wikipedia](https://en.wikipedia.org/wiki/Rapidly-exploring_random_tree).
+
+This project uses **two trees**: one begins at _start_ position
+and the other at _goal_ position. Both trees are expanded
+for set amount of iterations. Also known as bidirectional RRT.
+
+Expansion is implemented by randomly generating candidate robot poses. The algorithm searches for its closest tree branch and tries to connect to it. The connection is tested for collission. If the whole connection is collision free then the candidate pose is added to the tree.
+
+After the expansion phase an attempt to merge these two
+trees is made. If any collision free path is found between
+these trees the trees are merged to form a single tree and path
+from _start_ to _goal_ can be generated. Following this path guarantees
+collision free movement.
+
+## Installation & building
 Install gazebo-ros-pkgs and gazebo-ros-control
-
-    $ sudo apt-get install ros-kinetic-gazebo-ros-pkgs ros-kinetic-gazebo-ros-control
+`$ sudo apt-get install ros-kinetic-gazebo-ros-pkgs ros-kinetic-gazebo-ros-control`
 
 Install effort-controllers to use torque-control interface
+`$ sudo apt-get install ros-kinetic-effort-controllers`
+    
+Build project
+`$ catkin_make -DCMAKE_BUILD_TYPE=Debug`
+	
+To build and run tests
+`$ catkin_make run_tests -DCMAKE_BUILD_TYPE=Debug`
 
-    $ sudo apt-get install ros-kinetic-effort-controllers
    
 ## Example run
-
-	roslaunch elfin_launch manipulator_controller.launch
+	
+	$ source devel/setup.bash
+	$ roslaunch elfin_launch manipulator_controller.launch
 	
 	# In another terminal
-	roslaunch rrt_solver rrt.launch
+	$ source devel/setup.bash
+	$ roslaunch rrt_solver rrt.launch
 
+	# Set joint space target (joint degrees)
 	rostopic pub -1 /elfin/manipulator_controller/command_jog std_msgs/Float64MultiArray "{layout: {dim: [], data_offset: 0}, data: [0,   0,   120, 0, -30, 0]}"
-
+	
+	# Target to get back to initial position
 	rostopic pub -1 /elfin/manipulator_controller/command_jog std_msgs/Float64MultiArray "{layout: {dim: [], data_offset: 0}, data: [0,   0,   0,    0,   0,  0]}"
 
-## Path optimization
-Go through the path (vector of q's) by skipping every other q and try collisions between them. pop all succesfully skipped q's. Do until all
-tries fail.
-
-Popping could be done using indices in single pass using reverse iteration.
-
-How to remember which connectios already failed? Boolean vector alongside?
-
-**Greedy** tests:
-try connecting first and last straight away. (if not done elsewhere already)
-
-Configurable skip-ratio?
-
-## Collision checking
-First interpolate greedily e.g. 0.2 intervals. Then if success use finer interpolation.
-
-Interpolation must adapt to configuration distance.
-
-Collision checking itself:
-1. Compute sphere center points using fk. 
-2 for each test collision against every obstacle.
-
-Reverse order testing is likely better than forward.
-
-Collision volumes
-
-coll vol struct: solver, radius
-every collision vol is tested agaisnt each obstacle
-
-## Tree exploration
-
-1. q_rand
-2. clamp(q_rand)
-3. Test collision
-4. Add if collision free
-5. Repeat for tree2
-
-after certain iterations try merging
-1. for each tree1 compute distance to all tree2 q's
-2. save all with D <\ some limit
-3. For saved ones collision check. Return path on success.
-4. Else remember tried combinations and return to tree expansions step
-
-Remembering tried combinations:
-For each tree keep two vectors. Old and new nodes.
-New nodes are those newer tried.
-New nodes are tested on all opposing tree nodes (old and new)
-and then added to the old nodes afterwards.
-	

@@ -1,4 +1,5 @@
 devel/
 build/
 .vscode/
-
+*.mp4
+*.mov
