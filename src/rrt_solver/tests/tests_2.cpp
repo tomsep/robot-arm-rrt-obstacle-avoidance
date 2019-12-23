@@ -156,11 +156,14 @@ TEST_F(MyTestSuite2, solver_intergation_test)
   goal << -0.011869359246152733, -0.030880877807751617, 1.1021087454649434, 0.021360337268155227, 0.4388774263030708, 1.445796934865296;
 
   double spacing = 0.002;
-  double maxnorm = 0.2;
-  unsigned int try_merge_interval = 1000;
-  unsigned int maxiter = 100000;
+  unsigned int try_merge_interval = 400;
+  unsigned int maxiter = 10000;
   std::shared_ptr<RRT::PointVisualizer> pviz_dummy;
-  auto path = RRT::solver(rob, obstacles, start, goal, spacing, maxnorm, try_merge_interval, maxiter, pviz_dummy);
+  std::vector<std::pair<int, double>> clamp_levels;
+  clamp_levels.push_back(std::make_pair(100, 0.2));
+
+  auto path = RRT::solver(rob, obstacles, start, goal, 
+    spacing, try_merge_interval, maxiter, pviz_dummy, clamp_levels);
 
   ASSERT_EQ(path.size() >= 2, true);
 }

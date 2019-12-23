@@ -22,14 +22,14 @@ Install effort-controllers to use torque-control interface
    
 ## Example run
 
-	roslaunch elfin_launch workspace_obstacle_avoidance.launch
+	roslaunch elfin_launch manipulator_controller.launch
 	
 	# In another terminal
 	roslaunch rrt_solver rrt.launch
 
-	rostopic pub -1 /elfin/workspace_obstacle_avoidance/command_jog std_msgs/Float64MultiArray "{layout: {dim: [], data_offset: 0}, data: [0,   0,   90,    0,   0,  0]}"
+	rostopic pub -1 /elfin/manipulator_controller/command_jog std_msgs/Float64MultiArray "{layout: {dim: [], data_offset: 0}, data: [0,   0,   120, 0, -30, 0]}"
 
-	rostopic pub -1 /elfin/workspace_obstacle_avoidance/command_jog std_msgs/Float64MultiArray "{layout: {dim: [], data_offset: 0}, data: [0,   0,   0,    0,   0,  0]}"
+	rostopic pub -1 /elfin/manipulator_controller/command_jog std_msgs/Float64MultiArray "{layout: {dim: [], data_offset: 0}, data: [0,   0,   0,    0,   0,  0]}"
 
 ## Path optimization
 Go through the path (vector of q's) by skipping every other q and try collisions between them. pop all succesfully skipped q's. Do until all

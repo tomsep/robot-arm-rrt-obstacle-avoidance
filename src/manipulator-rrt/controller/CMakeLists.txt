@@ -41,9 +41,7 @@ catkin_package(
 )
 
 add_library(${PROJECT_NAME}
-  src/course_exercises/workspace_obstacle_avoidance.cpp
-  src/course_exercises/workspace_multipoint_obstacle_avoidance.cpp
-  src/course_exercises/rrt.cpp
+  src/manipulator_controller.cpp
 )
 
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})

@@ -119,7 +119,7 @@ private:
 };
 
 
-class WorkspaceObstacleAvoidance : public controller_interface::Controller<hardware_interface::EffortJointInterface>
+class ManipulatorController : public controller_interface::Controller<hardware_interface::EffortJointInterface>
 {
   public:
     bool init(hardware_interface::EffortJointInterface *hw, ros::NodeHandle &n)
@@ -157,18 +157,18 @@ class WorkspaceObstacleAvoidance : public controller_interface::Controller<hardw
         for (size_t i = 0; i < n_joints_; i++)
         {
             std::string si = boost::lexical_cast<std::string>(i + 1);
-            if (n.getParam("/elfin/workspace_obstacle_avoidance/gains/elfin_joint" + si + "/pid/p", Kp[i]))
+            if (n.getParam("/elfin/manipulator_controller/gains/elfin_joint" + si + "/pid/p", Kp[i]))
             {
                 Kp_(i) = Kp[i];
             }
             else
             {
-                std::cout << "/elfin/workspace_obstacle_avoidance/gains/elfin_joint" + si + "/pid/p" << std::endl;
+                std::cout << "/elfin/manipulator_controller/gains/elfin_joint" + si + "/pid/p" << std::endl;
                 ROS_ERROR("Cannot find pid/p gain");
                 return false;
             }
 
-            if (n.getParam("/elfin/workspace_obstacle_avoidance/gains/elfin_joint" + si + "/pid/i", Ki[i]))
+            if (n.getParam("/elfin/manipulator_controller/gains/elfin_joint" + si + "/pid/i", Ki[i]))
             {
                 Ki_(i) = Ki[i];
             }
@@ -178,7 +178,7 @@ class WorkspaceObstacleAvoidance : public controller_interface::Controller<hardw
                 return false;
             }
 
-            if (n.getParam("/elfin/workspace_obstacle_avoidance/gains/elfin_joint" + si + "/pid/d", Kd[i]))
+            if (n.getParam("/elfin/manipulator_controller/gains/elfin_joint" + si + "/pid/d", Kd[i]))
             {
                 Kd_(i) = Kd[i];
             }
@@ -321,9 +321,9 @@ class WorkspaceObstacleAvoidance : public controller_interface::Controller<hardw
         pub_SaveData_ = n.advertise<std_msgs::Float64MultiArray>("SaveData", 1000); // 뒤에 숫자는?
 
         // 6.2 subsriber
-        sub_command_jog_ = n.subscribe<std_msgs::Float64MultiArray>("command_jog", 1, &WorkspaceObstacleAvoidance::jog_commandCB, this);
-        sub_command_cart_ = n.subscribe<std_msgs::Float64MultiArray>("command_cart", 1, &WorkspaceObstacleAvoidance::cart_commandCB, this);
-        rrt_sub_ = n_public.subscribe<trajectory_msgs::JointTrajectory>("path", 10, &WorkspaceObstacleAvoidance::rrt_solved_CB, this);
+        sub_command_jog_ = n.subscribe<std_msgs::Float64MultiArray>("command_jog", 1, &ManipulatorController::jog_commandCB, this);
+        sub_command_cart_ = n.subscribe<std_msgs::Float64MultiArray>("command_cart", 1, &ManipulatorController::cart_commandCB, this);
+        rrt_sub_ = n_public.subscribe<trajectory_msgs::JointTrajectory>("path", 10, &ManipulatorController::rrt_solved_CB, this);
 
         planner_.reset(new helpers::JointMotionPlan());
         lin_motion_ = nullptr;
@@ -787,4 +787,4 @@ class WorkspaceObstacleAvoidance : public controller_interface::Controller<hardw
     std_msgs::Float64MultiArray msg_SaveData_;
 };
 }; // namespace arm_controllers
-PLUGINLIB_EXPORT_CLASS(arm_controllers::WorkspaceObstacleAvoidance, controller_interface::ControllerBase)
+PLUGINLIB_EXPORT_CLASS(arm_controllers::ManipulatorController, controller_interface::ControllerBase)

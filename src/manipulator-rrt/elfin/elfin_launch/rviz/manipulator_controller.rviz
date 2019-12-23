@@ -7,7 +7,6 @@ Panels:
         - /Global Options1
         - /RobotModel1/Links1
         - /RobotModel1/Links1/elfin_end_link1
-        - /MarkerArray3
       Splitter Ratio: 0.510489523
     Tree Height: 565
   - Class: rviz/Selection
@@ -166,7 +165,7 @@ Visualization Manager:
       Shaft Length: 1
       Shaft Radius: 0.0500000007
       Shape: Axes
-      Topic: /elfin/workspace_obstacle_avoidance/xd
+      Topic: /elfin/manipulator_controller/xd
       Unreliable: false
       Value: true
     - Class: rviz/MarkerArray
@@ -174,7 +173,7 @@ Visualization Manager:
       Marker Topic: /robothull_markers
       Name: MarkerArray
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -182,7 +181,7 @@ Visualization Manager:
       Marker Topic: /obstacle_markers
       Name: MarkerArray
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -206,7 +205,7 @@ Visualization Manager:
     Background Color: 48; 48; 48
     Default Light: true
     Fixed Frame: elfin_base
-    Frame Rate: 8
+    Frame Rate: 15
   Name: root
   Tools:
     - Class: rviz/Interact

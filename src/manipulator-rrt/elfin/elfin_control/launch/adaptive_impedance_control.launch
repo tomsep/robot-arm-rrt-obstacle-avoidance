@@ -1,8 +1,0 @@
-<launch>
-  <rosparam file="$(find elfin_control)/config/adaptive_impedance_control.yaml" command="load"/>
-  
-  <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
-    output="screen" ns="/elfin" args="joint_state_controller adaptive_impedance_controller"/>
-
-  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" ns="/elfin"/>
-</launch>
